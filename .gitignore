@@ -1,0 +1,16 @@
+# Downloaded by setup.sh (engines and model weights are not redistributed here)
+bin/
+models/
+models_pt/
+.venv/
+
+# Your images and results
+output/
+samples/
+*.text.json
+
+# Python / macOS / editor
+__pycache__/
+*.pyc
+.DS_Store
+.claude/

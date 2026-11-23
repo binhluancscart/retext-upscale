@@ -1,0 +1,3 @@
+#!/bin/bash
+# Shortcut:  ./upscale photo.jpg 4k
+exec python3 "$(cd "$(dirname "$0")" && pwd)/upscale.py" "$@"
