@@ -1,4 +1,4 @@
-# upscale
+# retext-upscale
 
 A command-line tool for macOS that sharpens and enlarges images to 1080p, 2K, 4K or 8K.
 
