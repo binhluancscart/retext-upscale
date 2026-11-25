@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import math
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -23,12 +22,13 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent
-ENGINE = ROOT / "bin" / "upscayl-bin"
+WINDOWS = sys.platform == "win32"
+ENGINE = ROOT / "bin" / ("upscayl-bin.exe" if WINDOWS else "upscayl-bin")
 MODEL_DIR = ROOT / "models"
 MODEL_SCALE = 4  # every bundled model is 4x
-# Optional heavy engine (./setup.sh --pro): PyTorch models run through engine_pt.py
+# Optional heavy engine (install.py --pro): PyTorch models run through engine_pt.py
 PT_MODEL_DIR = ROOT / "models_pt"
-PT_PYTHON = ROOT / ".venv" / "bin" / "python"
+PT_PYTHON = ROOT / ".venv" / ("Scripts/python.exe" if WINDOWS else "bin/python")
 PT_ENGINE = ROOT / "engine_pt.py"
 
 # Presets are 16:9 frames; the image is scaled to cover the frame, keeping its aspect ratio.
@@ -94,7 +94,7 @@ def installed_models() -> list[str]:
 def resolve_model(name: str) -> str:
     model = MODEL_ALIASES.get(name.lower(), name)
     if model not in installed_models():
-        have = ", ".join(installed_models()) or "(none installed, run ./setup.sh)"
+        have = ", ".join(installed_models()) or "(none installed, run: python3 install.py)"
         die(f"model '{name}' is not installed. Available: {have}")
     return model
 
@@ -132,7 +132,7 @@ def run_engine(src: Path, dst: Path, model: str, args: argparse.Namespace) -> No
             die(f"PyTorch engine failed on {src.name}\n{(proc.stdout or '')[-1500:]}")
         return
     if not ENGINE.exists():
-        die("engine not installed. Run ./setup.sh first.")
+        die("engine not installed. Run: python3 install.py")
     cmd = [
         str(ENGINE),
         "-i", str(src),
@@ -275,7 +275,7 @@ def main() -> None:
             "Preset: 1080 (1920x1080), 2k (2560x1440), 4k (3840x2160), 8k (7680x4320)\n"
             "Models: standard (default, photos), ultrasharp (strongest sharpening), fidelity (keeps real detail),\n"
             "        design (designs/web pages with text), art (illustration/anime), lite (fast)\n"
-            "Heavy engine (needs ./setup.sh --pro): pro (best small text), pro-max, webphoto\n"
+            "Heavy engine (needs install.py --pro): pro (best small text), pro-max, webphoto\n"
         ),
     )
     ap.add_argument("input", nargs="?", help="image file or folder of images")
@@ -330,6 +330,8 @@ def main() -> None:
         die("--scale must be between 1 and 16")
     if not 0 <= args.blend <= 1:
         die("--blend must be between 0 and 1")
+    if args.retext and sys.platform != "darwin":
+        die("--retext needs macOS (it uses the Vision OCR and the macOS system fonts)")
     model = resolve_model(args.model)
 
     if args.scale:
@@ -366,6 +368,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    if shutil.which("python3") is None:
-        die("python3 is required")
     main()

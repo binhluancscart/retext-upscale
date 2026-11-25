@@ -1,6 +1,6 @@
 # retext-upscale
 
-A command-line tool for macOS that sharpens and enlarges images to 1080p, 2K, 4K or 8K.
+A command-line tool that sharpens and enlarges images to 1080p, 2K, 4K or 8K. Upscaling runs on macOS, Linux and Windows; text re-rendering (`--retext`) is macOS only.
 
 It wraps existing open-source upscaling engines and adds the parts they leave out: exact output sizes, colour correction, batch mode, and an optional step that **re-renders small text with real fonts** so UI mockups and web designs stay readable at 4K.
 
@@ -39,24 +39,26 @@ The comparison is with the command-line engines this project wraps (`upscayl-bin
 
 ## Requirements
 
-- macOS on Apple Silicon (developed on an M2, macOS 13.3)
 - Python 3.10+ with `pillow` and `numpy`
-- Xcode Command Line Tools (`swiftc`), only for `--retext`
+- A GPU with Vulkan support for the ncnn engine (Metal on macOS)
+- macOS and Xcode Command Line Tools (`swiftc`), only for `--retext`
 
 ## Install
 
 ```bash
 pip install -r requirements.txt
-./setup.sh
+python3 install.py
 ```
 
-`setup.sh` downloads the `upscayl-bin` engine and five models (about 135 MB on disk) into `bin/` and `models/`. Nothing is bundled in this repository.
+On Windows use `python install.py`, and run the tool as `upscale photo.jpg 4k` (via `upscale.bat`) or `python upscale.py photo.jpg 4k`.
+
+`install.py` downloads the `upscayl-bin` engine and five models (about 135 MB on disk) into `bin/` and `models/`. Nothing is bundled in this repository.
 
 | Command | What it adds | Size |
 |---|---|---|
-| `./setup.sh` | engine + 5 default models | ~135 MB |
-| `./setup.sh --all` | 2 more ncnn models | +64 MB |
-| `./setup.sh --pro` | PyTorch in `.venv` + 3 PyTorch models | ~800 MB on disk |
+| `python3 install.py` | engine + 5 default models | ~135 MB |
+| `python3 install.py --all` | 2 more ncnn models | +64 MB |
+| `python3 install.py --pro` | PyTorch in `.venv` + 3 PyTorch models | ~800 MB on disk |
 
 ## Usage
 
@@ -165,11 +167,15 @@ Things that were tested and rejected because they scored worse or changed nothin
 | `engine_pt.py` | PyTorch engine (tiled inference on MPS, TTA) |
 | `retext.py` | OCR-driven text re-rendering |
 | `ocr.swift` | small Vision OCR helper, compiled on first use |
-| `setup.sh` | downloads engines and models |
+| `install.py` | downloads engines and models (all platforms); `setup.sh` is a shortcut to it |
+| `upscale.bat` | Windows launcher |
 
 ## Limitations
 
-- macOS only. The ncnn engine binary and Vision OCR are macOS-specific; PyTorch is pinned to 2.5.1 because newer builds need macOS 14 for GPU support.
+- **Only macOS has been tested.** The Linux and Windows paths (engine download, launcher, PyTorch on CUDA/CPU) are written but have not been run on those systems yet; reports are welcome.
+- `--retext` is macOS only: it relies on Vision OCR and the macOS system fonts.
+- Linux needs a working Vulkan driver for the ncnn engine. On Windows the default PyTorch build is CPU-only; install the CUDA build inside `.venv` for an NVIDIA GPU.
+- On macOS 13, PyTorch is pinned to 2.5.1 because newer builds need macOS 14 for GPU support.
 - An upscaler cannot recover detail that is not in the source. A larger source image always beats a better model.
 - `--retext` targets flat-background UI text in Latin script. It has only been tried on English mockups.
 
